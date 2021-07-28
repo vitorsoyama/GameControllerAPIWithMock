@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class GameNotFoundException extends Exception {
 
     public GameNotFoundException(Long id) {
-        super(String.format("Person with ID %s not found!", id));
+        super(String.format("game with ID %s not found!", id));
     }
 }
