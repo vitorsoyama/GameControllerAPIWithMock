@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.Range;
 import project.ApiDio.gameapi.enums.Situation;
 
 import javax.persistence.EnumType;
@@ -26,7 +27,7 @@ public class GameDTO {
     private String gameName;
 
     @NotNull
-    @Size(min = 4, max =5)
+    @Range(min = 1900, max = 3000)
     private Integer gameYear;
 
     @NotEmpty
