@@ -33,6 +33,6 @@ public class Game {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Situation type;
+    private Situation situationType;
 
 }

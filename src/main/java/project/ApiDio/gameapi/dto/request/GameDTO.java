@@ -38,7 +38,7 @@ public class GameDTO {
     private String gameConsole;
 
     @Enumerated(EnumType.STRING)
-    private Situation type;
+    private Situation situationType;
 
 
 }
