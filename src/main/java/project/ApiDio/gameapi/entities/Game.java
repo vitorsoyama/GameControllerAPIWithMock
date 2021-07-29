@@ -4,12 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import project.ApiDio.gameapi.enums.Situation;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
 @Data
@@ -34,7 +31,8 @@ public class Game {
     @Column(nullable = false)
     private String gameConsole;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String situation;
+    private Situation type;
 
 }

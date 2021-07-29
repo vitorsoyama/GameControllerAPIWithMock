@@ -38,8 +38,8 @@ public class GameService {
     }
 
     public List<GameDTO> listAll() {
-        List<Game> people = gameRepository.findAll();
-        return people.stream()
+        List<Game> games = gameRepository.findAll();
+        return games.stream()
                 .map(gameMapper::toDTO)
                 .collect(Collectors.toList());
     }

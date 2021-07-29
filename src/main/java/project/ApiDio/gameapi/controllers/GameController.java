@@ -31,6 +31,7 @@ public class GameController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public MessageResponseDTO create(@RequestBody @Valid GameDTO gameDTO) {
+
         return gameService.create(gameDTO);
     }
 
@@ -42,6 +43,7 @@ public class GameController {
 
     @GetMapping
     public List<GameDTO> listAll() {
+
         return gameService.listAll();
     }
 
