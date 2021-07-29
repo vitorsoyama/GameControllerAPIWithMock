@@ -14,7 +14,7 @@ Para executar o projeto no terminal, digite o seguinte comando:
 mvn spring-boot:run
 Após executar o comando acima, basta apenas abrir o seguinte endereço e visualizar a execução do projeto:
 
-http://localhost:8080/api/v1/people
+http://localhost:8080/api/v1/games
 São necessários os seguintes pré-requisitos para a execução do projeto desenvolvido durante a aula:
 
 Java 11 ou versões superiores.
@@ -36,5 +36,6 @@ Site oficial do GIT
 Site oficial do GitHub
 Documentação oficial do Lombok
 Documentação oficial do Map Struct
-Referência para o padrão arquitetural REST
-Neste link, seguem os slides apresentados como o roteiro utilizado para o desenvolvimento do projeto da nossa sessão.
+Referência para o padrão arquitetural REST.
+
+A API se trata de uma biblioteca de jogos onde o utilizador preenche com jogos com interesse em jogar ou que já jogou.
