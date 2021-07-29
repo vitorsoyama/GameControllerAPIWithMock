@@ -14,6 +14,8 @@ import javax.validation.constraints.Size;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class GameDTO {
 
     private Long id;
