@@ -10,8 +10,6 @@ import project.ApiDio.gameapi.entities.Game;
 
 @Mapper(componentModel = "spring")
 public interface GameMapper {
-
-    @Mapping(target = "birthDate", source = "birthDate", dateFormat = "dd-MM-yyyy")
     Game toModel(GameDTO dto);
 
     GameDTO toDTO(Game dto);

@@ -4,7 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import project.ApiDio.gameapi.enums.Situation;
 
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -20,17 +23,21 @@ public class GameDTO {
 
     @NotEmpty
     @Size(min = 2, max = 100)
-    private String firstName;
+    private String gameName;
+
+    @NotEmpty
+    @Size(min = 4, max =4)
+    private Integer gameYear;
 
     @NotEmpty
     @Size(min = 2, max = 100)
-    private String lastName;
+    private String gameProducer;
 
     @NotEmpty
-    private String cpf;
+    private String gameConsole;
 
-    @NotNull
-    private String birthDate;
+    @Enumerated(EnumType.STRING)
+    private Situation type;
 
 
 }

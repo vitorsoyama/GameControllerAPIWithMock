@@ -51,7 +51,7 @@ public class GameService {
         Game updatedGame = gameMapper.toModel(gameDTO);
         Game savedGame = gameRepository.save(updatedGame);
 
-        MessageResponseDTO messageResponseUpdate = createMessageResponse("Gamei successfully updated with ID ", savedGame.getId());
+        MessageResponseDTO messageResponseUpdate = createMessageResponse("Game successfully updated with ID ", savedGame.getId());
 
         return messageResponseUpdate;
     }

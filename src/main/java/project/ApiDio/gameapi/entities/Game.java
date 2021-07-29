@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.time.LocalDate;
 
 @Entity
 @Data
@@ -20,14 +19,18 @@ public class Game {
     private Long id;
 
     @Column(nullable = false)
-    private String firstName;
+    private String gameName;
 
     @Column(nullable = false)
-    private String lastName;
+    private Integer gameYear;
 
-    @Column(nullable = false, unique = true)
-    private String cpf;
+    @Column(nullable = false)
+    private String gameProducer;
 
-    private LocalDate birthDate;
+    @Column(nullable = false)
+    private String gameConsole;
+
+    @Column(nullable = false)
+    private String situation;
 
 }
