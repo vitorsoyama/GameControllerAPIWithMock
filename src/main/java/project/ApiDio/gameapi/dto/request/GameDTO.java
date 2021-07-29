@@ -27,7 +27,7 @@ public class GameDTO {
     private String gameName;
 
     @NotNull
-    @Range(min = 1900, max = 3000)
+    @Size(min = 4, max = 4)
     private Integer gameYear;
 
     @NotEmpty
