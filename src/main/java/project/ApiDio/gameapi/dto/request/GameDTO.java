@@ -9,6 +9,7 @@ import project.ApiDio.gameapi.enums.Situation;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 
@@ -24,7 +25,7 @@ public class GameDTO {
     @Size(min = 2, max = 100)
     private String gameName;
 
-    @NotEmpty
+    @NotNull
     @Size(min = 4, max =5)
     private Integer gameYear;
 
