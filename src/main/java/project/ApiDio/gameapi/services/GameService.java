@@ -25,9 +25,9 @@ public class GameService {
         Game game = gameMapper.toModel(gameDTO);
         Game savedGame = gameRepository.save(game);
 
-        MessageResponseDTO messageResponseCreated = createMessageResponse("Game successfully created with ID ", savedGame.getId());
+        MessageResponseDTO messageResponse = createMessageResponse("Game successfully created with ID ", savedGame.getId());
 
-        return messageResponseCreated;
+        return messageResponse;
     }
 
     public GameDTO findById(Long id) throws GameNotFoundException {
@@ -51,9 +51,9 @@ public class GameService {
         Game updatedGame = gameMapper.toModel(gameDTO);
         Game savedGame = gameRepository.save(updatedGame);
 
-        MessageResponseDTO messageResponseUpdate = createMessageResponse("Game successfully updated with ID ", savedGame.getId());
+        MessageResponseDTO messageResponse = createMessageResponse("Game successfully updated with ID ", savedGame.getId());
 
-        return messageResponseUpdate;
+        return messageResponse;
     }
 
     public void delete(Long id) throws GameNotFoundException {
