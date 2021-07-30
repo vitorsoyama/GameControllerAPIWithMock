@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import project.ApiDio.gameapi.enums.Situation;
 
 import javax.persistence.*;
 
@@ -31,8 +30,10 @@ public class Game {
     @Column(nullable = false)
     private String gameConsole;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Situation situationType;
+    private int max;
+
+    @Column(nullable = false)
+    private int quantity;
 
 }

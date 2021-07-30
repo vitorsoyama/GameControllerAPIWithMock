@@ -1,0 +1,39 @@
+ext {
+  limits = [
+      'instruction': 96,
+      'branch'     : 84,
+      'line'       : 96.5,
+      'complexity' : 87,
+      'method'     : 95,
+      'class'      : 100
+  ]
+}
+
+dependencies {
+  api project(':springfox-spi')
+  api project(':springfox-schema')
+  api project(':springfox-spring-web')
+  api project(':springfox-spring-webmvc')
+
+  api libs.core
+  api libs.spring
+  api libs.swagger2Core
+  api "io.swagger.core.v3:swagger-annotations:${oasCore}"
+
+  compileOnly libs.clientProvided
+  compileOnly libs.springProvidedWithMvc
+  compileOnly "javax.servlet:javax.servlet-api:$servlet"
+
+
+  testImplementation project(':springfox-core')
+  testImplementation project(':springfox-core').sourceSets.test.output
+  testImplementation project(':springfox-schema').sourceSets.test.output
+  testImplementation project(':springfox-spring-web').sourceSets.test.output
+  testImplementation project(':springfox-spring-webmvc').sourceSets.test.output
+
+  testImplementation libs.test
+  testImplementation "org.skyscreamer:jsonassert:${jsonAssert}"
+  testImplementation "javax.servlet:javax.servlet-api:$servlet"
+  testImplementation libs.clientProvided
+  testImplementation libs.springProvidedWithMvc
+}

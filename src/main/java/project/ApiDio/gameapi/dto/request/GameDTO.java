@@ -5,10 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Range;
-import project.ApiDio.gameapi.enums.Situation;
 
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -37,8 +35,13 @@ public class GameDTO {
     @NotEmpty
     private String gameConsole;
 
-    @Enumerated(EnumType.STRING)
-    private Situation situationType;
+    @NotNull
+    @Max(500)
+    private Integer max;
+
+    @NotNull
+    @Max(100)
+    private Integer quantity;
 
 
 }

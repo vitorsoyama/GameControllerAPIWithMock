@@ -1,0 +1,569 @@
+== Answers to common questions and problems
+
+[[q1]]*Q. Why does springfox ignore the http status code in the return value of a controller method?*
+
+A. https://github.com/springfox/springfox/issues/822#issuecomment-117372109[Reference #822]
+
+[[q2]]*Q. What is the relationship between swagger-ui and springfox-swagger-ui?*
+
+A. It can be a little confusing:
+
+- Swagger Spec is a specification.
+- Swagger Api - an implementation of that specification that supports jax-rs, restlet, jersey etc.
+- Springfox libraries in general - another implementation of the specification focused on the spring based ecosystem.
+- Swagger.js and Swagger-ui - are client libraries in javascript that can consume swagger specification.
+- springfox-swagger-ui - the one that you're referring to, is just packaging swagger-ui in a convenient way so that
+spring services can serve it up.
+
+[[q3]]*Q. I use GSON and don't use Jackson, What should I do?*
+
+A. Thanks to https://github.com/chrishuttonch[@chrishuttonch] for describing the solution to https://github.com/springfox/springfox/issues/867[this issue]
+
+TIP: I switched on the excludeFieldsWithoutExposeAnnotation() which meant that none of the objects would produce any data. To get around this I created several serializers for the following classes:
+
+[source,java]
+----
+.registerTypeAdapter(springfox.documentation.service.ApiListing.class, new SwaggerApiListingJsonSerializer())
+.registerTypeAdapter(springfox.documentation.spring.web.json.Json.class, new SwaggerJsonSerializer())
+.registerTypeAdapter(springfox.documentation.swagger.web.SwaggerResource.class, new SwaggerResourceSerializer())
+.registerTypeAdapter(springfox.documentation.service.ResourceListing.class, new SwaggerResourceListingJsonSerializer())
+.registerTypeAdapter(springfox.documentation.swagger.web.SwaggerResource.class, new SwaggerResourceSerializer())
+.registerTypeAdapter(springfox.documentation.swagger.web.SecurityConfiguration.class, new SwaggerSecurityConfigurationSerializer())
+.registerTypeAdapter(springfox.documentation.swagger.web.UiConfiguration.class, new SwaggerUiConfigurationSerializer());
+----
+
+[[q4]]*Q. ObjectMapper weirdness in a spring-boot app?*
+
+A. It is possible you're experiencing one of the following issues
+
+. NPE During startup?
+[NOTE]
+Running in debugger revealed that I had two instances of WebApplicationInitializers in my war. Spring is
+refreshing context with each one and is resulting in second instance of `OptimizedModelPropertiesProvider` without
+`onApplicationEvent` call. I was able to fix it by removing second `WebApplicationInitializer` in my code. Seems this is
+related to https://github.com/spring-projects/spring-boot/issues/221[spring-boot issue #221] footnote:[Thanks to https://github.com/shasti421[@shasti421]]
+
+. Object Mapper Customizations Not Working?
+[NOTE]
+Sometimes there are multiple `ObjectMapper` in play and it may result in the customizations not working
+footnote:[thanks https://github.com/springfox/springfox/issues/1140[Jaap-van-Hengstum]] Spring Boot in `HttpMessageConverters` first adds the Spring Boot configured `MappingJackson2HttpMessageConverter` and then it adds the default `MappingJackson2HttpMessageConverter` from Spring MVC. This causes the `ObjectMapperConfigured` event to fire twice, first for the configured converter (which is actually used) and then for the default converter. So when you f.e. set a custom property naming strategy then in `ObjectMapperBeanPropertyNamingStrategy` this is overwritten by the second event. The following code fixes this:
+
+[source,java]
+----
+@Configuration
+public class MyWebAutoConfiguration extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        ObjectMapper objectMapper = null;
+        for (HttpMessageConverter converter : converters) {
+            if (converter instanceof MappingJackson2HttpMessageConverter) {
+                MappingJackson2HttpMessageConverter jacksonConverter =
+                        ((MappingJackson2HttpMessageConverter) converter);
+
+                if (objectMapper == null) {
+                    objectMapper = jacksonConverter.getObjectMapper();
+                } else {
+                    jacksonConverter.setObjectMapper(objectMapper);
+                }
+            }
+        }
+    }
+}
+----
+
+[[q5]]*Q. How do we use Java 8 types easily. LocalDateTime?*
+
+A. The easiest way to to configure dates is via `Docket#directModelSubstitute(LocalDateTime.class, String.class)`. If
+these are ISO 8601 dates that conform to a string format i.e. `yyyy-MM-dd'T'HH:mm'Z'`. However you won't have any format or validation info.
+
+TIP: Use `java.sql.Date` works great for date precision and `java.util.Date` for date-time precision footnote:[thanks
+ https://github.com/springfox/springfox/issues/1161[@cbronet]]
+
+The way to correctly map the "Date" and "DateTime" types to their corresponding swagger types:
+
+* Substitute "Date" types (java.util.LocalDate, org.joda.time.LocalDate) by java.sql.Date.
+* Substitute "DateTime" types (java.util.ZonedDateTime, org.joda.time.LocalDateTime, ...) by java.util.Date.
+
+[source,csharp]
+----
+docket
+.directModelSubstitute(LocalDate.class, java.sql.Date.class)
+.directModelSubstitute(LocalDateTime.class, java.util.Date.class)
+----
+
+
+
+[[q6]]*Q. How does one use `@ModelAttribute` annotation. It doesn't seem to render the model properties as scalar
+properties?*
+
+A. In order for `@ModelAttribute` annotated types to be inferred the properties need to be bean properties. If the
+intent is immutability and passing in an object, the preferred approach is to make that a request body, in which
+case the immutability will follow the rules laid out by jackson to determine what constitutes a request "view" of the
+request object.
+
+Getters/setters are a clean way to indicate what values can come in to a operation. While it may not be apparent in a
+trivial model with one level nesting; the design choice will become clear when we realize that model attributes can be
+arbitrarily nested. Consider (pseudo code in C# for brevity)
+
+[source,csharp]
+----
+
+Person {String firstName {get;set;}
+String lastName {get;set;}
+Category category {get;set;}
+Category {String name {get;set;}
+String description {get;}
+
+----
+
+So one could set properties:
+
+- firstName
+- lastName
+- category.name
+
+Now we don't want category to be able to set description via the operation, how do we control/specify that? It makes
+it hard to reason about which fields in an object are not intended to be mutated. This is the reason we chose to
+limit it to objects that expose getters and setters.
+
+NOTE: I know spring supports fields as well, and it will fall back to fields if setters are not found.
+
+[[q7]]*Q. How should we resolve multiple object mappers available as beans especially when using spring-hateoas?*
+
+A. The idea is to provide a `@Primary` ObjectMapper. Based on answer provided by @prabhat1790 in https://github.com/springfox/springfox/issues/890[issue #890]
+
+[source,java]
+----
+  private static final String SPRING_HATEOAS_OBJECT_MAPPER = "_halObjectMapper";
+
+  @Autowired
+  @Qualifier(SPRING_HATEOAS_OBJECT_MAPPER)
+  private ObjectMapper springHateoasObjectMapper;
+
+  @Primary
+  @Bean
+  @Order(value=Ordered.HIGHEST_PRECEDENCE)
+  @DependsOn(SPRING_HATEOAS_OBJECT_MAPPER)
+  public ObjectMapper objectMapper() {
+    return springHateoasObjectMapper;
+  }
+----
+
+and set the order of the other bean to lowest precedence.
+
+[[q8]]*Q. How do I use this library to aggregate swagger-enabled resources from multiple services?*
+
+A. Logical explanation of how one might go about doing this is available in the https://groups.google.com/forum/#!searchin/swagger-swaggersocket/multiple/swagger-swaggersocket/g8fgSGUCrYs/A8Ms_lFOoN4J[swagger google
+group] Additionally https://github.com/springfox/springfox/issues/1001#issuecomment-147609243[this comment] further
+discusses issues with doing this.
+
+[[q9]]*Q. Why are my API params marked as required=false?*
+
+A. This is because of how plugins work and how their priority layers information
+
+- `@PathVariables` are always marked as required.
+- `@ApiParam` is an optional annotation to describe additional meta-information like description etc.
+- `@ApiParam#required()` is defaulted to false, unless you set it to true.
+
+Springfox uses plugins to layer information. There are a set of plugins that are spring specific that apply the
+inferred values on to the internal service models. The swagger annotation related metadata is layered on top of the
+spring-mvc descriptions. By definition, plugins don't know and should not know about each other or previously
+inferred values (in your case required attribute).
+
+So if you choose to augment the definitions with `@ApiParam` then you need to be explicit and set the value to true.
+
+[[q10]]*Q. How does one write a plugin to e.g. make default all types required and only some not required?*
+
+A. To do this, you'd have to
+- add an alternate type rule for `Optional<T>` see `genericModelSubstitutes` in docket
+- implement your own https://github.com/springfox/springfox/blob/master/springfox-spi/src/main/java/springfox/documentation/spi/schema/ModelPropertyBuilderPlugin.java#L26[ModelPropertyBuilderPlugin]
+- and override the read only property if you find an `Optional` type. See https://github.com/springfox/springfox/blob/master/springfox-swagger-common/src/main/java/springfox/documentation/swagger/schema/ApiModelPropertyPropertyBuilder.java#L35[here] for an example.
+
+Keep in mind that you need the plugin to fire after this plugin... so order it accordingly
+
+[[q11]]*Q. Why are all my operations not showing in the UI?*
+
+A. This is a known limitation of swagger-spec. There is a work around for it but, swagger-ui won't play nice with it.
+I have a https://github.com/swagger-api/swagger-js/pull/541[PR] which address that issue. Would be great if you vote
+up the PR and the https://github.com/swagger-api/swagger-spec/issues/291[underlying issue]
+
+WARNING: This https://github.com/swagger-api/swagger-js/pull/541[PR] has been closed!
+
+[[q12]]*Q. How would one partition apis based on versions?*
+
+A. Excerpted from an explanation for https://github.com/springfox/springfox/issues/963[issue 963]...
+
+(springfox) uses the context path as the starting point.
+
+What you really need to is to define a dynamic servlet registration and create 2 dockets .. one for **api** and
+one for **api/v2**. This http://stackoverflow.com/questions/23049736/working-with-multiple-dispatcher-servlets-in-a-spring-application[SO post] might help
+
+[source,java]
+----
+    ...
+      Dynamic servlet = servletContext.addServlet("v1Dispatcher", new DispatcherServlet(ctx1));
+            servlet.addMapping("/api");
+            servlet.setLoadOnStartup(1);
+
+      Dynamic servlet = servletContext.addServlet("v2Dispatcher", new DispatcherServlet(ctx2));
+            servlet.addMapping("/api/v2");
+            servlet.setLoadOnStartup(1);
+----
+
+[[q13]]*Q. How does one configure swagger-ui for non-springboot applications?*
+
+A. Excerpted from https://github.com/springfox/springfox/issues/983[issue 983]...
+
+I was able to get it working by modifying the `dispatcherServlet` to listen on /* , but this prevented `swagger-ui.html`
+from being served. To fix this to let the `swagger-ui.html` bypass the `dispatcherServlet` i had to create a new
+servlet mapping:
+
+[source,xml]
+----
+        <servlet>
+          <servlet-name>RestServlet</servlet-name>
+          <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+          <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value></param-value>
+          </init-param>
+          <load-on-startup>1</load-on-startup>
+        </servlet>
+
+        <servlet-mapping>
+          <servlet-name>default</servlet-name>
+            <url-pattern>/swagger-ui.html</url-pattern>
+        </servlet-mapping>
+
+        <servlet-mapping>
+          <servlet-name>RestServlet</servlet-name>
+            <url-pattern>/*</url-pattern>
+        </servlet-mapping>
+----
+
+Also had to let the webjar through the dispatcher servlet:
+
+`<mvc:resources mapping="/webjars/**" location="classpath:/META-INF/resources/webjars/"/>`
+
+Tricky to get working, but it works.  Perhaps there is a better way to remap swagger-ui.html or let it pass
+through the dispatcherServlet.
+
+IMPORTANT: `swagger-ui.html` is the name of the swagger-ui page. While it cannot be changed one can configure the
+application such that landing on a particular URL re-directs the browser to the real swagger-ui location.
+footnote:[Thanks https://github.com/springfox/springfox/issues/1080#issuecomment-169185653[@chornyi]]
+
+For e.g. One could move Swagger UI under `/documentation` using this code.
+[source,java]
+----
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry) {
+	
+		registry.addRedirectViewController("/documentation/v2/api-docs", "/v2/api-docs?group=restful-api");
+        	registry.addRedirectViewController("/documentation/swagger-resources/configuration/ui","/swagger-resources/configuration/ui");
+        	registry.addRedirectViewController("/documentation/swagger-resources/configuration/security","/swagger-resources/configuration/security");
+        	registry.addRedirectViewController("/documentation/swagger-resources", "/swagger-resources");
+	}
+
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+	 	registry.
+	 		addResourceHandler("/documentation/swagger-ui.html**").addResourceLocations("classpath:/META-INF/resources/swagger-ui.html");
+        	registry.
+        		addResourceHandler("/documentation/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+	}
+----
+
+However, it still requires a redirect to `/documentation/swagger-ui.html` because the path name is
+https://github.com/springfox/springfox/blob/master/springfox-swagger-ui/src/web/js/springfox.js#L4[hard-coded].
+
+[[q14]]*Q. How does one create rules to substitute list and array items?*
+
+A.  If the following types...
+
+[source,java]
+----
+    ToSubstitute[] array;
+    List<ToSubstitute> list;
+----
+
+Need to look like this over the wire...
+
+[source,java]
+----
+    Substituted[] array;
+    List<Substituted> list;
+----
+
+This is how the rules need to be configured
+
+[source,java]
+----
+    rules.add(newRule(resolver.arrayType(ToSubstitute), resolver.arrayType(Substituted)))
+    rules.add(newRule(resolver.resolve(List, ToSubstitute), resolver.resolve(List, Substituted)))
+----
+
+[[q15]]*Q. How does one configure a docket with multiple protocols/schemes?*
+
+A.  Use the `protocols` method to configure the docket to indicate supported schemes.
+
+[source,java]
+----
+    docket.protocols(newHashSet("http", "https"))
+----
+
+
+[[q16]]*Q. How does one use springfox in a project with xml spring configuration?*
+
+A. There is a demo application that describes https://github.com/springfox/springfox-demos/tree/master/spring-xml-swagger[how java-xml] configuration needs to be setup.
+
+[[q17]]*Q. How does one override the host name?*
+
+A. This should be available in v2.3 thanks https://github.com/springfox/springfox/pull/1011[to this PR] by @cbornet.
+It is still in incubation but host name can be configured per docket
+
+[source,java]
+----
+     docket.host("http://maybe-an-api-gateway.host");
+----
+
+[[q18]]*Q. Infinite loop when springfox tries to determine schema for objects with nested/complex constraints?*
+
+A. If you have recursively defined objects, I would try and see if providing an alternate type might work or perhaps
+even ignoring the offending classes e.g. order using the docket. ignoredParameterTypes(Order.class). This is
+usually found in Hibernate domain objects that have bidirectional dependencies on other objects.
+
+[[q19]]*Q. How are tags implemented in springfox?*
+
+Tags which are first class constructs just like operations, models etc. and what you see on operations are
+references to those Tags. The typical workflow is to register tags in a docket and use the tag definitions on
+operations(`@ApiOperation`)/controllers(`@Api`) to point to these registered tags (in the docket) by name.
+
+The convenience we have in place just to reduce the amount of boiler plate for the developer is to provide a default
+description that happens to be the same as the tag name. So in effect we are synthesizing a pseudo Tag by referencing
+one on the operation.
+
+By defining the Tag on the docket, we are referencing a real tag defined by you.
+
+
+[[q20]]*20. What can I try if configuration non-boot applications do not work as expected?*
+
+Thanks to https://github.com/Pyohwan[@Pyohwan]'s suggestion
+`@Configuration` annotation may not working with @EnableSwagger2.
+So shouldn't attach @Configration. So if you have a configuration class that pulls in the springfox configuration
+using the `@EnableSwagger2` like below, try removing the `@Configuration` on this class as shown below.
+
+[source,java]
+----
+@EnableSwagger2
+public class SwaggerConfig {
+...
+----
+
+and  use `@Import` annotation on `WebMvcConfigurerAdapter` or similar configuration class.
+[source,java]
+----
+@Configuration
+@EnableWebMvc
+@ComponentScan(...)
+@Import(SwaggerConfig.class)
+public class MvcConfig extends WebMvcConfigurerAdapter {
+...
+----
+
+[[q21]]*21. How to add CORS support? (thanks https://github.com/gangakrishh[@gangakrishh])
+
+Based on the https://spring.io/guides/gs/rest-service-cors/[spring guide], Creating a `WebMvcConfigurer` we can
+configure a request mapping to allow specific origins.
+
+[source,java]
+----
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/some-request-mapping").allowedOrigins("http://localhost:9000");
+            }
+        };
+----
+
+If that doesn't work, most likely the cors registration is happening earlier than the SpringFox beans are registered.
+ To fix this, we can register a CORS filter registration bean, that registers our endpoints. In the example below,
+ we've registered it for all endpoints.
+
+[source,java]
+----
+@Configuration
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+    //https://stackoverflow.com/questions/31724994/spring-data-rest-and-cors
+    @Bean
+    public FilterRegistrationBean corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        CorsConfiguration config = new CorsConfiguration().applyPermitDefaultValues();
+        config.setAllowCredentials(false);
+        source.registerCorsConfiguration("/**", config);
+
+        FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+        bean.setOrder(0);
+
+        return bean;
+    }
+}
+----
+
+[[q22]]*22. How to configure the docket when using https://immutables.github.io[Immutables]? (thanks https://github
+.com/kevinm416[@kevinm416])
+
+This is related to https://github.com/springfox/springfox/issues/1490[#1490].The way to configure this
+is to create a custom  alternateTypeRules in the `Docket` config. For e.g. if you have an immutable `MyClass` that
+ generates `ImmutableMyClass`, then we would add a rule for it as shown below.
+
+
+[source,java]
+----
+@Bean
+public Docket docket() {
+  return new Docket(DocumentationType.SWAGGER_2)
+    .alternateTypeRules(AlternateTypeRules.newRule(MyClass.class,
+                ImmutableMyClass.class));
+----
+
+NOTE: If you're using a library for you models, you may need to make the Immutable visible outside the package.
+
+[[q23]]*23. Why does setting `@ApiImplicitParam#paramType="form"` output undefined dataType?
+
+If you change the datatype to "__file" once 2.7.0 is released, it will fix your issue.
+
+NOTE: The reason we use "__file" is because if a consuming library defines a custom type `File` then that type ends
+up getting treated just as if it were a `file` data type, even if that wasn't the intent. To distinguish the usage of
+ the custom type from the natively understood `file` primitive we introduced this convention.
+
+[[q24]]
+*24. How to configure springfox for Vavr/Javaslang Jackson module support?
+
+We need to first create an alternate type rules convention that tells springfox to treat the vavr persistent
+collections just like the native java collections. The following example only configurers Set, List and Map types.
+++++
+<script src="https://gist.github.com/dilipkrish/2bf80a0285a04b4037c8994fd8cb8b80.js"></script>
+++++
+
+Optionally, to use jackson effectively, for non-collection types we can register an application listener that
+registers the vavr module with the objectmapper that is being used.
+[source,java]
+----
+@Component
+public class SwaggerJacksonModuleWithVavr implements ApplicationListener<ObjectMapperConfigured> {
+
+  @Override
+  public void onApplicationEvent(ObjectMapperConfigured event) {
+    event.getObjectMapper().registerModule(new VavrModule());
+  }
+}
+----
+
+
+[[q25]]
+*25. Why are properties missing from certain models/types?
+
+A good example of when this might happen is when using Immutables (the library) that are not particularly obvious.
+Immutables are great, except that, unless u craft your model correctly it might lead to confusing results, as you've
+seen. Also how springfox infers the model is opposite to how the service consumes it. By that I mean that, take for e.g. Model has properties a (read/write), b (write only), c (readonly) we read the writable properties for requests and readable properties for responses.
+
+So if your model is only used for requests, it will have a and b
+And if your model is only used of responses it will have a and c
+and if it is present in both request and response it will have a, b and c.
+
+We're working to make this better thanks to https://github.com/springfox/springfox/pull/2056[model enhancements work]
+ by https://github.com/MaksimOrlov[Maksim]
+
+[[q26]]
+*26. Why is `http://host:port/swagger-ui.html` blank? Or why do I get a 404 when I navigate to
+`http://host:port/swagger-ui.html`?
+
+In non-spring boot application ensure that the resource handlers are added for the springfox-swagger-ui <<q13,webjars>>
+
+If its a spring boot application:
+
+- check to see if the `spring.resources.add-mappings` property is set to true.
+- check to see if spring security is applied that the appropriate resources are permitted.
+
+[source,java]
+----
+  @Configuration
+  public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+      http
+        .csrf().disable()
+        .exceptionHandling()
+        .authenticationEntryPoint(unauthorizedHandler)
+        .accessDeniedHandler(accessDeniedHandler)
+        .and()
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
+        .authorizeRequests()
+        //.antMatchers("/actuator/**").permitAll()
+        .antMatchers("/actuator/**").hasAuthority("ADMIN")
+        .antMatchers(
+          HttpMethod.GET,
+          "/v2/api-docs",
+          "/swagger-resources/**",
+          "/swagger-ui.html**",
+          "/webjars/**",
+          "favicon.ico"
+        ).permitAll()
+        .antMatchers("/auth/**").permitAll()
+        .anyRequest().authenticated();
+
+      http
+        .addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
+        .headers()
+        .cacheControl();
+    }
+  }
+----
+
+Or we could simply ignore these resources altogether
+
+[source,java]
+----
+@Configuration
+public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+  @Override
+  public void configure(WebSecurity web) throws Exception {
+    web.ignoring()
+      .antMatchers(
+        "/v2/api-docs",
+        "/swagger-resources/**",
+        "/swagger-ui.html**",
+        "/webjars/**");
+  }
+}
+----
+
+[[q27]]
+*27. Controller receives parameter as a String but we are expecting a json Type. How can we model this?
+
+https://github.com/springfox/springfox/blob/7bd56cac0479384265b90dac62492ab6ce510191/swagger-contract-tests/src/main/java/springfox/test/contract/swagger/FeatureDemonstrationService.java#L307-L339[FeatureDemonstrationService.class]
+[[q27-controller]]
+[source,java,linenums]
+----
+include::../../swagger-contract-tests/src/main/java/springfox/test/contract/swagger/FeatureDemonstrationService.java[tags=question-27,indent=0]
+----
+<1> Assume we have a controller action that has a `String` parameter (contents). This is how we can override the
+on-the-wire type (CustomTypeFor2031).
+<2> The method parameter that comes in as a `String` that is actually interpreted as `CustomTypeFor2031`
+<3> `CustomTypeFor2031` complex type that we read from json String.
+
+Once we do this we need to configure this change so that we can add the model to the definitions section.
+
+https://github.com/springfox/springfox/blob/eedbfb1b2dcf0344e21aefd0731515aa63fc9070/swagger-contract-tests/src/test/groovy/springfox/test/contract/swaggertests/Swagger2TestConfig.groovy#L118[Swagger2TestConfig]
+[[q27-config]]
+[source,java,linenums]
+----
+include::../../swagger-contract-tests/src/main/java/springfox/test/contract/swagger/Swagger2TestConfig.java[tags=question-27-config,indent=0]
+----
+<1> Add `CustomTypeFor2031` as a additional model.

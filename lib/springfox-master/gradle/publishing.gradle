@@ -1,0 +1,189 @@
+import springfox.gradlebuild.plugins.MultiProjectReleasePlugin
+
+import java.text.SimpleDateFormat
+
+Date buildTimeAndDate = new Date()
+
+ext {
+  buildDate = new SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
+  buildTime = new SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
+  projectUrl = "https://github.com/springfox/springfox"
+  bintrayUser = project.hasProperty('bintrayUsername') ?
+      project.property('bintrayUsername') :
+      System.getenv('BINTRAY_USER_NAME')
+  bintrayApiKey = project.hasProperty('bintrayApiKey') ?
+      project.property('bintrayApiKey') :
+      System.getenv('BINTRAY_PASSWORD')
+  passphrase = project.hasProperty('gpgPassphrase') ?
+      project.property('gpgPassphrase') :
+      System.getenv('GPG_PASSPHRASE')
+  sonatypeUser = project.hasProperty('ossUser') ?
+      project.property('ossUser') :
+      System.getenv('SONATYPE_USER_NAME')
+  sonatypePassword = project.hasProperty('ossPassword') ?
+      project.property('ossPassword') :
+      System.getenv('SONATYPE_PASSWORD')
+  shouldSyncWithMavenCentral = project.hasProperty('ossSync') ?
+      project.property('ossSync') :
+      System.getenv('SONATYPE_SYNC')
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: "com.jfrog.artifactory"
+
+jar {
+  manifest {
+    attributes(
+        'Implementation-Title': project.name,
+        'Implementation-Version': new Object() {
+          String toString() { project.version }
+        },
+        'Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')',
+        'Built-With': "gradle-${project.getGradle().getGradleVersion()}, groovy-${GroovySystem.getVersion()}",
+        'Build-Time': "${new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")}",
+        'Built-By': System.getProperty('user.name'),
+        'Built-On': "${InetAddress.localHost.hostName}/${InetAddress.localHost.hostAddress}"
+    )
+  }
+}
+
+def generatedSources = "$buildDir/generated/source/apt/main"
+
+task packageSources(type: Jar) {
+  archiveClassifier.set("sources")
+  from sourceSets.main.allSource
+  from generatedSources
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  archiveClassifier.set("javadoc")
+  from javadoc.destinationDir
+}
+
+artifacts {
+  archives packageSources
+  archives javadocJar
+}
+
+javadoc {
+  if (JavaVersion.current().isJava9Compatible()) {
+    options.addBooleanOption('html5', true)
+  }
+  if (JavaVersion.current().isJava8Compatible()) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+  }
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
+      versionMapping {
+        usage('java-api') {
+          fromResolutionOf('runtimeClasspath')
+        }
+        usage('java-runtime') {
+          fromResolutionResult()
+        }
+      }
+      pom {
+        name = "${project.name}"
+        url = "https://github.com/springfox/springfox"
+        description = "JSON API documentation for spring based applications"
+
+        scm {
+          url = "scm:git:git@github.com:springfox/springfox.git"
+          connection = 'scm:git:git@github.com:springfox/springfox.git'
+          developerConnection = 'scm:git:git@github.com:springfox/springfox.git'
+        }
+
+        licenses {
+          license {
+            name = "The Apache Software License, Version 2.0"
+            url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution = "repo"
+          }
+        }
+        developers {
+          developer {
+            id = "martypitt@me.com"
+            name = "Marty Pitt"
+            organization = "The Mango Factory"
+            email = "martypitt@me.com"
+          }
+          developer {
+            id = "dilipkrish"
+            name = "Dilip Krishnan"
+            email = "dilipkrish_subscriptions@yahoo.com"
+          }
+          developer {
+            id = "adrianbk"
+            name = "Adrian Kelly"
+            email = "adrianbkelly+swagger@gmail.com"
+          }
+        }
+      }
+      artifact packageSources
+      artifact javadocJar
+    }
+  }
+}
+
+
+artifactory {
+  contextUrl = 'https://oss.jfrog.org'
+  resolve {
+    repository {
+      repoKey = 'libs-release'
+      maven = true
+    }
+  }
+  publish {
+    repository {
+      repoKey = 'oss-snapshot-local' //The Artifactory repository key to publish to
+      //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
+      //~/.gradle/gradle.properties, otherwise to be set in the build server
+      username = project.bintrayUser
+      password = project.bintrayApiKey
+    }
+    defaults {
+      publications('mavenJava')
+    }
+  }
+}
+
+bintray {
+  user = project.bintrayUser
+  key = project.bintrayApiKey
+  dryRun = MultiProjectReleasePlugin.dryRun(project) //Whether to run this as dry-run, without deploying
+  publish = true //If version should be auto published after an upload
+  publications = ['mavenJava']
+  pkg {
+    repo = 'maven-repo'
+    name = "springfox"
+    userOrg = "springfox"
+    websiteUrl = "${project.projectUrl}"
+    issueTrackerUrl = "${project.projectUrl}/issues"
+    vcsUrl = "${project.projectUrl}.git"
+    desc = project.description
+    licenses = ['Apache-2.0']
+    labels = ['spring', 'swagger', 'apis', 'oas', 'openapi', 'springfox']
+    publicDownloadNumbers = true
+    version {
+      vcsTag = project.version
+      gpg {
+        sign = true //Determines whether to GPG sign the files. The default is false
+        //Optional. The passphrase for GPG signing'
+        passphrase = project.passphrase
+      }
+      mavenCentralSync {
+        sync = ("true" == project.shouldSyncWithMavenCentral)
+        user = project.sonatypeUser
+        password = project.sonatypePassword
+        close = '1'
+      }
+    }
+  }
+}
+

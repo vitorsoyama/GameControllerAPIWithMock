@@ -1,0 +1,185 @@
+== Introduction
+
+The Springfox suite of java libraries are all about automating the generation of machine and human readable
+ specifications for JSON APIs written using the http://projects.spring.io/spring-framework[spring family of projects]. Springfox
+ works by examining an application, once, at runtime to infer API semantics based on spring configurations, class structure and
+ various compile time java Annotations.
+
+=== History
+
+Springfox has evolved from a project originally created by https://github.com/martypitt[Marty Pitt] and was named
+_swagger-springmvc_. Much kudos goes to Marty.
+
+=== Goals
+
+- To extend support for a number of the evolving standards targeted at JSON API specification and documentation
+such as: http://swagger.io/[swagger], http://raml.org/[RAML] and http://jsonapi.org/[jsonapi].
+
+- To extend support for spring technologies other than http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html[spring webmvc]
+
+- Philosophically, we want to discourage using (swagger-core) annotations that are not material to the
+service description at runtime. For e.g. the jackson annotations should always trump or have more weight than
+`@ApiModelProperty` or for e.g. `@NotNull` or specifying @RequestParam#required should always win. Annotations are to
+to be used only to supplement documentation or override/tweak the resulting spec in cases where its not possible to
+infer service/schema characteristics.
+
+=== What it's not
+
+Endorsed or approved by the Spring Framework Contributors
+
+=== Development Environment
+
+- File >> open >> build.gradle
+- Make sure to check the 'use the default gradle wrapper' option.
+- First time build
+
+[source,bash]
+[subs="verbatim,attributes"]
+----
+./gradlew cleanIdea idea
+----
+
+- To get more output from any gradle commands/tasks append a `-i` (info) or `-d` (debug) e.g.
+
+[source,bash]
+[subs="verbatim,attributes"]
+----
+./gradlew build -i
+----
+
+- To publish to local maven repository
+
+[source,bash]
+[subs="verbatim,attributes"]
+----
+./gradlew clean build publishToMavenLocal -i
+----
+
+NOTE: This build is optimized for releasing software to bintray/sonatype. In order for gradle to figure out
+the version the gradle plugin relies on local folder being a cloned git repository. Downloading the source archive
+and building will NOT work!
+
+==== Pre-Commit Build
+
+- Code quality (code coverage, checkstyle)
+
+[source,bash]
+[subs="verbatim,attributes"]
+----
+./gradlew check
+----
+
+==== Building reference documentation
+To build all the current documentation (builds hand written docs and javadocs):
+[source,bash]
+[subs="verbatim,attributes"]
+----
+./gradlew allDocs
+----
+
+The docs are generated in the `build/all-docs` folder. To publish the current documentation (snapshot)
+
+[source,bash]
+[subs="verbatim,attributes"]
+----
+./gradlew releaseDocs
+----
+
+==== Updating the contract tests
+When developing new contract test, to make it easy to update the existing tests with new contracts, uncomment the
+following lines in https://github.com/springfox/springfox/blob/master/swagger-contract-tests/build.gradle[swagger-contract-tests/build.gradle].
+Usually this happens when we add a new contract test for a bug we've fixed or a feature that was added, we create an
+endpoint in https://github.com/springfox/springfox/blob/master/springfox-spring-web/src/test/java/springfox/documentation/spring/web/dummy/controllers/BugsController.java[BugsController]
+or https://github.com/springfox/springfox/blob/master/springfox-spring-web/src/test/java/springfox/documentation/spring/web/dummy/controllers/FeatureDemonstrationService.java[FeatureDemonstrationService] to demonstrate the new fix or behavior.
+
+[[update-contract-tests]]
+[source,gradle,linenums]
+----
+include::../../swagger-contract-tests/build.gradle[tags=update-contract-tests,indent=0]
+----
+
+==== CI Environment
+
+https://circleci.com/gh/springfox/springfox[Circle CI]
+
+=== Releasing
+
+To release a non-snapshot version of Springfox:
+
+- Execute the the release commands:
+The below environment variables are required to run a release:
+    - `GITHUB_TOKEN` - this is the github token
+    - `BINTRAY_USER_NAME` - this is your bintray user
+    - `BINTRAY_PASSWORD` - this is your bintray token
+    - `SONATYPE_USER_NAME`
+    - `SONATYPE_PASSWORD`
+    - `GPG_PASSPHRASE` - if your gpg key has a passphrase or ''
+    - `SONATYPE_SYNC` - automatically sync to maven central
+
+Alternatively you could set the following gradle/project properties (-Pproperty)
+    - `githubToken` - this is the github token
+    - `bintrayUsername` - this is your bintray user
+    - `bintrayApiKey` - this is your bintray token
+    - `gpgPassphrase` - if your gpg key has a passphrase or ''
+    - `ossUser`
+    - `ossPassword`
+    - `ossSync` - automatically sync to maven central
+
+
+Recommend using [autoenv](https://github.com/kennethreitz/autoenv) with a `.env` file at the root of the repo.
+
+[source,]
+[subs="verbatim,attributes"]
+----
+    ./gradlew clean build release [-PreleaseType=<MAJOR|MINOR|PATCH>]
+    ./gradlew releaseDocs
+----
+
+The release steps are as follows:
+- check that the git workspace is clean
+- check that the local git branch is master
+- check that the local git branch is the same as origin
+- gradle test
+- gradle check
+- upload (publish) all artifacts to Bintray
+- Bumps the project version in `version.properties`
+- Git tag the release
+- Git push
+
+==== Snapshot
+
+This is normally done by the CI server
+[source,]
+[subs="verbatim,attributes"]
+----
+./gradlew publishSnapshot
+----
+
+==== Override deploy
+
+To bypass the standard release flow and upload directly to bintray use the following task
+- manually set the version in version.properties
+[source,]
+[subs="verbatim,attributes"]
+----
+./gradlew clean build bintrayUpload -PreleaseType=<MAJOR|MINOR|PATCH>
+ --stacktrace
+----
+
+==== Releasing documentation
+
+To update the docs for an existing release pass the `updateMode` switch
+[source,]
+[subs="verbatim,attributes"]
+----
+./gradlew releaseDocs
+----
+
+==== Contributing
+
+Please see the https://github.com/springfox/springfox/wiki[wiki] for some guidelines
+
+=== Support
+
+If you find issues or bugs please submit them via the https://github.com/springfox/springfox/issues[Springfox Github project]
+

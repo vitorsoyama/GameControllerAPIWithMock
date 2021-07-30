@@ -1,0 +1,164 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+/*
+ * Copyright 2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+plugins {
+  id "de.undercouch.download" version "4.1.0"
+  id "com.github.node-gradle.node" version "2.2.4"
+}
+
+ext {
+  swaggerUiVersion = '3.26.2'
+  swaggerUiDist = "build/libs/swagger-ui-dist.zip"
+  swaggerUiExplodedDir = "swagger-ui-${swaggerUiVersion}/dist/"
+  downloadUrl = "https://github.com/swagger-api/swagger-ui/archive/v${swaggerUiVersion}.zip"
+  destinationZip = "$buildDir/zip/${swaggerUiVersion}.zip"
+  replacePath = 'window.location.origin + "\\${pageContext.request.contextPath}/api-docs"'
+  artifactRepoBase = 'http://oss.jfrog.org/artifactory'
+}
+
+dependencies {
+  implementation project(':springfox-spring-webmvc')
+  testImplementation libs.test
+}
+
+node {
+  version = '12.16.2' // LTS
+  npmVersion = '6.4.1'
+  distBaseUrl = 'https://nodejs.org/dist'
+  download = true
+  workDir = file("${project.buildDir}/nodejs")
+  npmWorkDir = file("${project.buildDir}/npm")
+  nodeModulesDir = file("${project.projectDir}/src/web")
+}
+
+task swaggerUiDownload {
+  outputs.file(destinationZip) 
+  doLast {
+    download {
+      src downloadUrl
+      dest destinationZip
+      onlyIfNewer true
+    }
+  }
+}
+
+task unzip(type: Copy) {
+  dependsOn swaggerUiDownload
+  from zipTree(file(destinationZip))
+  include "*/dist/**"
+  into file("${buildDir}")
+}
+
+task npmTest(type: NpmTask) {
+  args = ['run', 'test']
+}
+
+task npmBuild(type: NpmTask) {
+  args = ['run', 'build']
+}
+
+task npmAuditFixForce(type: NpmTask) {
+  args = ['audit', 'fix', '--force']
+}
+
+task npmAuditFix(type: NpmTask) {
+  args = ['audit', 'fix']
+}
+
+task npmAudit(type: NpmTask) {
+  args = ['audit']
+}
+
+task npmCi(type: NpmTask) {
+  dependsOn npmSetup
+  args = ["ci"]
+  outputs.dir("node_modules")
+}
+
+task customizeSwaggerUi {
+  doLast {
+    copy {
+      from("${projectDir}/src/web/dist/springfox.js")
+      into("${buildDir}/${swaggerUiExplodedDir}")
+    }
+    copy {
+      from("${projectDir}/src/web/dist/springfox.js.map")
+      into("${buildDir}/${swaggerUiExplodedDir}")
+    }
+    copy {
+      from("${projectDir}/src/web/css/springfox.css")
+      into("${buildDir}/${swaggerUiExplodedDir}")
+    }
+    copy {
+      from "${projectDir}/src/web/fonts"
+      into "${buildDir}/${swaggerUiExplodedDir}/fonts"
+    }
+    delete "${buildDir}/${swaggerUiExplodedDir}/index.html"
+    delete "${buildDir}/${swaggerUiExplodedDir}/swagger-ui.js"
+    copy {
+      from "${projectDir}/src/web/swagger-ui.html"
+      into "${buildDir}/${swaggerUiExplodedDir}"
+      rename { String fileName ->
+        // a simple way is to remove the "-$version" from the jar filename
+        // but you can customize the filename replacement rule as you wish.
+        fileName.replace("swagger-ui", "index")
+      }
+      filter(ReplaceTokens, tokens: [VERSION: "${project.version}".toString()])
+    }
+  }
+}
+
+jar {
+  from("${buildDir}/${swaggerUiExplodedDir}") {
+    into "META-INF/resources/webjars/${project.name}"
+  }
+
+  manifest {
+    attributes(
+        'Implementation-Title': project.name,
+        'Implementation-Version': new Object() {
+          String toString() { project.version }
+        },
+        "SwaggerUi-Version": swaggerUiVersion,
+        'Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')',
+        'Built-With': "gradle-${project.getGradle().getGradleVersion()}, groovy-${GroovySystem.getVersion()}",
+        'Build-Time': "${new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")}",
+        'Built-By': System.getProperty('user.name'),
+        'Built-On': "${InetAddress.localHost.hostName}/${InetAddress.localHost.hostAddress}",
+    )
+  }
+}
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+task cleanup(type: Delete) {
+  delete "${buildDir}/${swaggerUiExplodedDir}"
+}
+
+clean.dependsOn(cleanup)
+if (project.hasProperty("local")) {
+  npmTest.dependsOn(npm_install)
+  npmBuild.dependsOn(npm_install, npmTest)
+} else {
+  npmTest.dependsOn(npmCi)
+  npmBuild.dependsOn(npmCi, npmTest)
+}
+
+customizeSwaggerUi.dependsOn(unzip, npmBuild)
+jar.dependsOn(customizeSwaggerUi)

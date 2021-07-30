@@ -1,0 +1,501 @@
+== Getting Started
+
+:releaseVersion: {springfox-released-version}
+:snapshotVersion: {springfox-current-version}
+:springfoxRfc6570Version: {springfox-swagger-ui-rfc6570-version}
+
+=== Dependencies
+The Springfox libraries are hosted on https://bintray.com/springfox/maven-repo/springfox/view[bintray] and jcenter.
+The artifacts can be viewed accessed at the following locations:
+
+* Release:
+   ** https://jcenter.bintray.com/io/springfox/
+   ** http://jcenter.bintray.com/io/springfox/
+* Snapshot
+ ** http://oss.jfrog.org/simple/oss-snapshot-local/io/springfox/
+ ** http://oss.jfrog.org/oss-snapshot-local/io/springfox/
+
+Springfox has multiple modules and the dependencies will vary depending on the desired API specification standard.
+Below outlines how to include the springfox-swagger2 module which produces Swagger 2.0 API documentation.
+
+==== Gradle
+===== Release
+[source,groovy]
+[subs="verbatim,attributes"]
+----
+repositories {
+  jcenter()
+}
+
+dependencies {
+//  For Spring boot Projects
+    implementation "io.springfox:springfox-boot-starter:{releaseVersion}"
+//  Uncomment for regular spring mvc projects and commend above dependency
+//    implementation "io.springfox:springfox-oas:{releaseVersion}"
+}
+----
+
+===== Snapshot
+
+[source,groovy]
+[subs="verbatim,attributes"]
+----
+repositories {
+   maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
+}
+
+dependencies {
+
+//  For Spring boot Projects
+    implementation "io.springfox:springfox-boot-starter:{releaseVersion}"
+//  Uncomment for regular spring mvc projects and commend above dependency
+//    implementation "io.springfox:springfox-oas:{snapshotVersion}"
+}
+----
+
+==== Maven
+===== Release
+
+[source,xml]
+[subs="verbatim,attributes"]
+----
+<pom>
+
+    <repositories>
+        <repository>
+          <id>jcenter-snapshots</id>
+          <name>jcenter</name>
+          <url>https://jcenter.bintray.com/</url>
+        </repository>
+    </repositories>
+
+    <dependency>
+        <groupId>io.springfox</groupId>
+        <artifactId>springfox-boot-starter</artifactId>
+        <version>{releaseVersion}</version>
+    </dependency>
+<!--   Uncomment for regular spring mvc projects and commend above dependency
+    <dependency>
+        <groupId>io.springfox</groupId>
+        <artifactId>springfox-oas</artifactId>
+        <version>{releaseVersion}</version>
+    </dependency>
+-->
+</pom>
+----
+
+===== Snapshot
+
+[source,xml]
+[subs="verbatim,attributes"]
+----
+<pom>
+    <repositories>
+        <repository>
+          <id>jcenter-snapshots</id>
+          <name>jcenter</name>
+          <url>http://oss.jfrog.org/artifactory/oss-snapshot-local/</url>
+        </repository>
+    </repositories>
+
+    <dependency>
+        <groupId>io.springfox</groupId>
+        <artifactId>springfox-boot-starter</artifactId>
+        <version>{snapshotVersion}</version>
+    </dependency>
+<!--   Uncomment for regular spring mvc projects and commend above dependency
+    <dependency>
+        <groupId>io.springfox</groupId>
+        <artifactId>springfox-oas</artifactId>
+        <version>{snapshotVersion}</version>
+    </dependency>
+-->
+</pom>
+----
+
+==== Migrating from existing 2.x version
+===== Spring Boot Applications
+1. Remove library inclusions of earlier releases. Specifically remove `springfox-swagger2` and `springfox-swagger-ui` inclusions.
+2. Remove the `@EnableSwagger2` annotations
+3. Add the `springfox-boot-starter`
+4. Springfox 3.x removes dependencies on guava and other 3rd party libraries (not zero dep yet! depends on spring plugin
+and open api libraries for annotations and models) so if you used guava predicates/functions those will need to
+transition to java 8 function interfaces
+5. If you are using WebMvc but you don't use the https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/servlet/config/annotation/EnableWebMvc.html[`@EnableWebMvc`] annotation yet, add this annotation.
+
+===== Regular spring mvc
+1. Remove library inclusions of earlier releases. Specifically remove `springfox-swagger2` and `springfox-swagger-ui` inclusions.
+2. For OpenAPI add the `@EnableOpenApi` annotation (and `@EnableSwagger2` for swagger 2.0)
+3. For OpenAPI add the `springfox-oas` library dependency (for swagger 2.0 use `springfox-swagger2`)
+4. Springfox 3.x removes dependencies on guava and other 3rd party libraries (not zero dep yet! depends on spring plugin
+and open api libraries for annotations and models) so if you used guava predicates/functions those will need to
+transition to java 8 function interfaces
+
+===== Changes in swagger-ui
+NOTE: For non-boot applications `springfox-swagger-ui` is no longer automatically enabled by adding the dependency. It needs to be explicitly register
+using a resource handler configurer (`WebFluxConfigurer` or `WebMvcConfigurer`). Here is how it is configured in
+`springfox-boot-starter`
+
+NOTE: swagger-ui location has moved from `http://host/context-path/swagger-ui.html`  to `http://host/context-path/swagger-ui/index.html`
+OR `http://host/context-path/swagger-ui/` for short. This makes it work much better with pulling it as a web jar and turning it off
+using configuration properties if not needed.
+
+For WebMvc https://github.com/springfox/springfox/blob/master/springfox-boot-starter/src/main/java/springfox/boot/starter/autoconfigure/SwaggerUiWebMvcConfigurer.java[SwagggerUIWebMvcConfigurer.java]
+[[jackson-convention-example-1]]
+[source,java,linenums]
+----
+include::../../springfox-boot-starter/src/main/java/springfox/boot/starter/autoconfigure/SwaggerUiWebMvcConfigurer.java[tags=swagger-ui-configurer,indent=0]
+----
+
+For WebFlux https://github.com/springfox/springfox/blob/master/springfox-boot-starter/src/main/java/springfox/boot/starter/autoconfigure/SwaggerUiWebFluxConfigurer.java[SwagggerUIWebMvcConfigurer.java]
+[[jackson-convention-example-1]]
+[source,java,linenums]
+----
+include::../../springfox-boot-starter/src/main/java/springfox/boot/starter/autoconfigure/SwaggerUiWebFluxConfigurer.java[tags=swagger-ui-configurer,indent=0]
+----
+
+== Quick start guides
+=== Springfox Spring MVC and Spring Boot
+[[getting-started-spring-boot]]
+
+[source,java,linenums]
+----
+include::../../springfox-spring-config/src/main/java/springfox/springconfig/Swagger2SpringBoot.java[indent=0]
+----
+
+=== Configuration explained
+IMPORTANT: This library extensively uses https://github.com/google/guava[googles guava library]. For e.g. when you
+see `newArrayList(...)` its actually the guava equivalent of creating an normal array list and adding item(s) to it.
+
+[source,groovy]
+[subs="verbatim,attributes"]
+----
+//This guava code snippet
+List<Something> guavaList = newArrayList(new Something());
+
+//... is equivalent to
+List<Something> list = new ArrayList<>();
+list.add(new Something());
+----
+
+<1> Enables Springfox swagger 2
+<2> Instructs spring where to scan for API controllers
+<3> `Docket`, Springfox's, primary api configuration mechanism is initialized for swagger specification 2.0
+<4> `select()` returns an instance of `ApiSelectorBuilder` to give fine grained control over the endpoints exposed
+via swagger.
+<5> `apis()` allows selection of ``RequestHandler``'s using a predicate. The example here uses an `any` predicate
+(default). Out of the box predicates provided are `any`, `none`, `withClassAnnotation`, `withMethodAnnotation` and
+`basePackage`.
+<6> `paths()` allows selection of ``Path``'s using a predicate. The example here uses an `any` predicate (default). Out of the box we provide predicates for `regex`, `ant`, `any`, `none`.
+<7> The selector needs to be built after configuring the api and path selectors.
+<8> Adds a servlet path mapping, when the servlet has a path mapping.
+This prefixes paths with the provided path mapping.
+<9> Convenience rule builder that substitutes `LocalDate` with `String` when rendering model properties
+<10> Convenience rule builder that substitutes a generic type with one type parameter with the type
+parameter. In this example `ResponseEntity<T>` with `T`.
+`alternateTypeRules` allows custom rules that are a bit more involved.
+The example substitutes  `DeferredResult<ResponseEntity<T>>`  with `T` generically.
+<11> Flag to indicate if default http response codes need to be used or not.
+<12> Allows globally overriding response messages for different http methods. In this example we override the 500
+error code for all `GET` requests ...
+<13> ... and indicate that it will use the response model `Error` (which will be defined elsewhere)
+<14> Sets up the security schemes used to protect the apis. Supported schemes are ApiKey, BasicAuth and OAuth
+<15> Provides a way to globally set up security contexts for operation. The idea here is that we provide a way to
+select operations to be protected by one of the specified security schemes.
+<16> Here we use ApiKey as the security schema that is identified by the name `mykey`
+<17> Selector for the paths this security context applies to.
+<18> Here we use the same key defined in the security scheme `mykey`
+<19> Optional swagger-ui security configuration for oauth and apiKey settings
+<20> Optional swagger-ui ui configuration currently only supports the validation url
+<21> * _Incubating_ * setting this flag signals to the processor that the paths generated should try and use
+https://tools.ietf.org/html/rfc6570#section-3.2.8[form style query expansion]. As a result we could distinguish paths
+ that have the same path stem but different query string combinations. An example of this would be two apis:
+First, http://example.org/findCustomersBy?name=Test to find customers by name.
+Per https://tools.ietf.org/html/rfc6570[RFC 6570],
+this would be represented as http://example.org/findCustomersBy{?name}.
+Second, http://example.org/findCustomersBy?zip=76051 to find customers by zip.
+Per https://tools.ietf.org/html/rfc6570[RFC 6570],
+this would be represented as http://example.org/findCustomersBy{?zip}.
+<22> Allows globally configuration of default path-/request-/headerparameters which are common for every rest operation of the api, but aren`t needed in spring controller method signature (for example authenticaton information). Parameters added here will be part of every API Operation in the generated swagger specification.
+on how the security is setup the name of the header used may need to be different. Overriding this value is a way to
+override the default behavior.
+<23> Adding tags is a way to define all the available tags that services/operations can opt into. Currently this only
+ has name and description.
+<24> Are there models in the application that are not "reachable"? Not reachable is when we have models that we would
+ like to be described but aren't explicitly used in any operation. An example of this is an operation that returns a
+ model serialized as a string. We do want to communicate the expectation of the schema for the string. This is a way
+ to do exactly that.
+
+There are plenty of more options to configure the `Docket`. This should provide a good start.
+
+=== Springfox Spring Data Rest
+In version greater than 2.6.0, support for spring data rest was added.
+
+NOTE: This is still in ***incubation***.
+
+In order to use it (non-spring-boot)
+
+1. add the `springfox-data-rest` dependency (via Gradle or Maven).
+2. Import the configuration from the `springfox-data-rest` module (via Java or xml config) as shown below
+
+==== Gradle
+[source,groovy]
+[subs="verbatim,attributes"]
+----
+dependencies {
+    implementation "io.springfox:springfox-data-rest:{releaseVersion}"
+}
+----
+
+==== Maven
+[source,xml]
+[subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-data-rest</artifactId>
+    <version>{releaseVersion}</version>
+</dependency>
+----
+
+==== java config
+[source,java]
+[subs="verbatim,attributes"]
+----
+//For java config
+@Import({ ... springfox.documentation.spring.data.rest.configuration.SpringDataRestConfiguration.class, ...})
+----
+
+==== xml config
+Import the bean in your xml configuration by defining a bean of the following type
+
+[source,xml]
+[subs="verbatim,attributes"]
+----
+<bean class="springfox.documentation.spring.data.rest.configuration.SpringDataRestConfiguration.class" />
+----
+
+NOTE: for spring boot, this section is not needed. Springfox will autoconfigure itself based on the detection of spring
+data rest components.
+
+=== Springfox Support for JSR-303
+In version greater than 2.3.2, support for bean validation annotations was added, specifically for @NotNull, @Min,
+@Max, and @Size.
+
+In order to use it
+
+- add the `springfox-bean-validators` dependency.
+
+==== Gradle
+[source,groovy]
+[subs="verbatim,attributes"]
+----
+dependencies {
+    implementation "io.springfox:springfox-bean-validators:{releaseVersion}"
+}
+----
+
+==== Maven
+[source,xml]
+[subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-bean-validators</artifactId>
+    <version>{releaseVersion}</version>
+</dependency>
+----
+
+- Import the configuration from the `springfox-bean-validators` module as shown below
+
+==== java config
+[source,java]
+[subs="verbatim,attributes"]
+----
+//For java config
+@Import({ ... springfox.bean.validators.configuration.BeanValidatorPluginsConfiguration.class, ...})
+----
+
+==== xml config
+Import the bean in your xml configuration by defining a bean of the following type
+
+[source,xml]
+[subs="verbatim,attributes"]
+----
+<bean class="springfox.bean.validators.configuration.BeanValidatorPluginsConfiguration" />
+----
+
+=== Springfox Swagger UI
+The `springfox-swagger-ui` http://www.webjars.org/[web jar] ships with https://github.com/swagger-api/swagger-ui[Swagger UI]. To include it in a standard
+Spring Boot application you can add the dependency as follows:
+
+[source,groovy]
+[subs="verbatim,attributes"]
+----
+dependencies {
+    compile 'io.springfox:springfox-swagger-ui:{releaseVersion}'
+}
+----
+
+Pulling in the dependency creates a webjar containing the swagger-ui static content. It adds a JSON endpoint
+`/swagger-resources` which lists all of the swagger resources and versions configured for a given
+application. The Swagger UI page should then be available at http://localhost:8080/swagger-ui/index.html[]
+
+image::springfox-swagger-ui.png[Swagger UI]
+
+The swagger ui version is specified in ./build.gradle where `swaggerUiVersion` is a git tag on the
+https:// github.com/swagger-api/swagger-ui[swagger-ui repo].
+
+All content is served from a webjar convention, relative url taking the following form:
+`webjars/springfox-swagger-ui/{releaseVersion}/swagger-ui/index.html`
+
+By default Spring Boot has sensible defaults for serving content from webjars. To configure vanilla spring web mvc
+apps to serve webjar content see the http://www.webjars.org/documentation#springmvc[webjar documentation]
+
+Swagger-Ui that comes bundled with springfox uses _meta-urls_ to configure itself and discover documented endpoints.
+The urls for the discovery are as shown below.
+
+[options="header,footer"]
+|=======================
+|Url | New Url in 2.5.+| Purpose
+|/configuration/security | /swagger-resources/configuration/security | Configuring swagger-ui security
+|/configuration/ui | /swagger-resources/configuration/ui | Configuring swagger-ui options
+|=======================
+
+Since swagger ui is a static resource it needs to rely on *known* endpoints to configure itself at runtime. So these
+☝️ are ***cool uris** that cannot change. There is <<q13,some customization>> that is possible, but swagger-ui needs
+to be available at the root of the _webcontext_.
+
+Regarding http://springfox.github.io/springfox/docs/current/#q13[where swagger-ui itself is served]
+and http://springfox.github.io/springfox/docs/current/#customizing-the-swagger-endpoints[where the api docs are served]
+those are totally configurable.
+
+=== Springfox RFC6570 support
+NOTE: Support has been dropped experimental feature as swagger-ui and the spec itself has better support for this.
+
+- Turn enableUrlTemplating `OFF`; (http://springfox.github.io/springfox/docs/current/#springfox-swagger2-with-spring-mvc-and-spring-boot[see #21])
+
+=== Springfox Spring-Integration Support *incubating*
+NOTE: _Keep in mind this is experimental_!
+
+As of Springfox 3.0 we offer experimental support for Spring Integration http inbound endpoints.
+
+The current implementation produces documentation for your endpoints, as far as possible automatically, based on static code analysis.
+Since the ultimate http responses in spring-integration cannot be determined statically from an http inbound endpoint,
+we use spring-restdocs to provide response body examples.
+
+We consider the
+support experimental because it has not been tested with a wide range of spring-integration applications and because we
+have only started to evaluate the possibilities we have with spring-restdocs.
+
+Depending on which web technology you choose, you need to include the appropriate `springfox-spring-integration-webflux`
+or `springfox-spring-integration-webmvc` dependency and use its respective tooling to produce documentation for your http
+responses, based on https://spring.io/projects/spring-restdocs[spring-restdocs].
+
+See the readme for https://github.com/springfox/springfox/tree/master/springfox-spring-integration-webmvc[springfox-spring-integration-webmvc] and
+https://github.com/springfox/springfox/tree/master/springfox-spring-integration-webflux[springfox-spring-integration-webflux] for details.
+
+=== Securing swagger-ui
+https://github.com/springfox/springfox/issues/2191#issuecomment-359159833[The user contributed example] uses OAuth2 and
+cookies-based auth in the browser. (Credit: https://github.com/evser[@evser])
+
+[source,java]
+[subs="verbatim,attributes"]
+----
+       protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests()
+        .anyRequest().authenticated()
+        .and().exceptionHandling().accessDeniedHandler(new AccessDeniedHandlerImpl())
+        .and().logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
+        .and().csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+        .and()
+        .addFilterBefore(ssoFilter(ApplicationConfiguration.API_BASE_PATH + "/login"), BasicAuthenticationFilter.class)
+        .requiresChannel().anyRequest().requireSecure();
+  }
+
+  @Bean
+  public FilterRegistrationBean oauth2ClientFilterRegistration(OAuth2ClientContextFilter filter) {
+    FilterRegistrationBean frb = new FilterRegistrationBean();
+    frb.setFilter(filter);
+    frb.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER);
+    return frb;
+  }
+
+  @Bean
+  @ConfigurationProperties("oauth2.client")
+  public OAuth2ProtectedResourceDetails authDetails() {
+    return new AuthorizationCodeResourceDetails();
+  }
+
+  @Bean
+  public SecurityConfiguration swaggerSecurityConfiguration() {
+    return new SecurityConfiguration("client-id", "client-secret", "realm",
+        "", "{{X-XSRF-COOKIE}}", ApiKeyVehicle.HEADER, "X-XSRF-TOKEN", ",");
+  }
+
+  private Filter ssoFilter(String path) {
+    OAuth2ClientAuthenticationProcessingFilter oAuth2ClientAuthenticationFilter = new OAuth2ClientAuthenticationProcessingFilter(path);
+    OAuth2RestTemplate oAuth2RestTemplate = new OAuth2RestTemplate(authDetails(), oauth2ClientContext);
+    DefaultRedirectStrategy defaultRedirectStrategy = new DefaultRedirectStrategy();
+    oAuth2ClientAuthenticationFilter.setRestTemplate(oAuth2RestTemplate);
+    oAuth2ClientAuthenticationFilter.setTokenServices(resourceServerTokenServices);
+    oAuth2ClientAuthenticationFilter.setAuthenticationSuccessHandler(
+        (request, response, authentication) -> {
+          String redirectUrl = request.getParameter(REDIRECT_URL_PARAM);
+          if (redirectUrl == null) {
+            redirectUrl = DEFAULT_REDIRECT_URL;
+          } else {
+            if (!redirectUrlValidator.validateRedirectUrl(redirectUrl)) {
+              request.setAttribute(MESSAGE_ATTRIBUTE_NAME,
+                  messageSource.getMessage("ivalid.redirect.url", new String[] { redirectUrl }, LocaleContextHolder.getLocale()));
+              response.sendError(HttpStatus.FORBIDDEN.value());
+            }
+          }
+          defaultRedirectStrategy.sendRedirect(request, response, redirectUrl);
+        });
+    return oAuth2ClientAuthenticationFilter;
+  }
+----
+
+And configure the Docket to be secured via the `AUTHORIZATION` header:
+[source,java]
+[subs="verbatim,attributes"]
+----
+
+  @Bean
+  public Docket api() throws IOException, URISyntaxException {
+    final List<ResponseMessage> globalResponses = Arrays.asList(
+        new ResponseMessageBuilder()
+            .code(200)
+            .message("OK")
+            .build(),
+        new ResponseMessageBuilder()
+            .code(400)
+            .message("Bad Request")
+            .build(),
+        new ResponseMessageBuilder()
+            .code(500)
+            .message("Internal Error")
+            .build());
+    final ApiInfo apiInfo = new ApiInfo("REST API", new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(CHANGELOG_FILENAME)))
+        .lines()
+        .collect(Collectors.joining(System.lineSeparator())),
+        "1.0.0-RC1", "", new Contact("team", "", "bla@bla.com"), "", "", Collections.emptyList());
+    return new Docket(DocumentationType.SWAGGER_2),
+        .securitySchemes(Arrays.asList(new ApiKey("Token Access", HttpHeaders.AUTHORIZATION, In.HEADER.name()))))
+        .useDefaultResponseMessages(false)
+        .globalResponseMessage(RequestMethod.GET, globalResponses)
+        .globalResponseMessage(RequestMethod.POST, globalResponses)
+        .globalResponseMessage(RequestMethod.DELETE, globalResponses)
+        .globalResponseMessage(RequestMethod.PATCH, globalResponses)
+        .select()
+        .apis(RequestHandlerSelectors.basePackage("com.controller"))
+        .build()
+        .apiInfo(apiInfo)
+        .directModelSubstitute(Temporal.class, String.class);
+  }
+----
+
+=== Springfox samples
+The https://github.com/springfox/springfox-demos[springfox-demos] repository contains a number of samples.
+

@@ -1,0 +1,815 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Api Documentation",
+        "description": "Api Documentation",
+        "termsOfService": "urn:tos",
+        "contact": {
+            
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0"
+        },
+        "version": "1.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:__PORT__",
+            "description": "Inferred Url"
+        }
+    ],
+    "tags": [
+        {
+            "name": "bugs-controller",
+            "description": "Bugs Controller"
+        }
+    ],
+    "paths": {
+        "/bugs/1965": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug1965",
+                "operationId": "bug1965UsingPOST",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "paramMap",
+                                    "sfData",
+                                    "sfId"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "description": "file",
+                                        "format": "binary"
+                                    },
+                                    "paramMap": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "type": "string"
+                                        },
+                                        "description": "paramMap"
+                                    },
+                                    "sfData": {
+                                        "description": "sfData",
+                                        "$ref": "#/components/schemas/Bug1965"
+                                    },
+                                    "sfId": {
+                                        "type": "integer",
+                                        "description": "sfId",
+                                        "format": "int32"
+                                    }
+                                }
+                            },
+                            "encoding": {
+                                "paramMap": {
+                                    "contentType": "text/plain"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Bug1965"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/2767/swagger15": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug2767",
+                "operationId": "bug2767UsingGET",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Response"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "examples": {
+                                    "example-0": {
+                                        "value": "{'invalidField': 'address'}"
+                                    }
+                                }
+                            },
+                            "text/plain": {
+                                "examples": {
+                                    "example-1": {
+                                        "value": "The address was invalid"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/2767/swagger20": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug2767New",
+                "operationId": "bug2767NewUsingGET",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Response"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "bar": {
+                                        "summary": "bar example",
+                                        "description": "Bar response",
+                                        "value": "{'invalidField': 'bar'}"
+                                    },
+                                    "foo": {
+                                        "summary": "foo example",
+                                        "description": "Foo response",
+                                        "value": "{'invalidField': 'foo'}"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/2982/body": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug2982Body",
+                "operationId": "bug2982BodyUsingPOST",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MyClass"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/bugs/2982/model": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug2982Model",
+                "operationId": "bug2982ModelUsingPOST",
+                "parameters": [
+                    {
+                        "name": "mySubSclass.str",
+                        "in": "query",
+                        "required": false,
+                        "style": "form",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "test",
+                        "in": "query",
+                        "required": false,
+                        "style": "form",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/bugs/3311": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3311",
+                "operationId": "bug3311UsingPOST",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "ticket"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "attachments": {
+                                        "type": "array",
+                                        "description": "attachments",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "ticket": {
+                                        "description": "ticket",
+                                        "$ref": "#/components/schemas/Bug3311"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/bugs/3321": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3321",
+                "operationId": "bug3321UsingGET",
+                "parameters": [
+                    {
+                        "name": "expand",
+                        "in": "query",
+                        "description": "expand",
+                        "required": false,
+                        "style": "form",
+                        "explode": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "one",
+                                "three",
+                                "two"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/bugs/3329": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3329",
+                "operationId": "bug3329UsingGET",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "query",
+                        "description": "uuid",
+                        "required": false,
+                        "style": "form",
+                        "schema": {
+                            "maxLength": 36,
+                            "minLength": 36,
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/3338": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3338",
+                "operationId": "bug3338UsingGET",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "username",
+                        "required": true,
+                        "style": "form",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/3348/{callId}": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3348",
+                "operationId": "bug3348UsingGET",
+                "parameters": [
+                    {
+                        "name": "callId",
+                        "in": "path",
+                        "description": "callId",
+                        "required": true,
+                        "style": "simple",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/3351/{id}": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "createPost",
+                "operationId": "createPostUsingPOST",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "id",
+                        "required": true,
+                        "style": "simple",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Pet"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/3371": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3371",
+                "operationId": "bug3371UsingGET",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/3380": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3380",
+                "operationId": "bug3380UsingGET",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/bug1370": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "upload attach file",
+                "operationId": "bug1370UsingPOST",
+                "parameters": [
+                    {
+                        "name": "fileToUpload",
+                        "in": "query",
+                        "required": false,
+                        "style": "form",
+                        "schema": {
+                            "type": "string",
+                            "format": "binary"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "required": false,
+                        "style": "form",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/bugs/bug2684": {
+            "get": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "Get test for response header",
+                "description": "Notes 'bout test",
+                "operationId": "responseHeader",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "headers": {
+                            "X-Hello-Bis": {
+                                "description": "X-Hello-Bis header description",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "X-Hello": {
+                                "description": "X-Hello header description",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bugs/bug3087": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3087",
+                "operationId": "bug3087UsingPOST",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Bug3087"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/bugs/bug3353": {
+            "post": {
+                "tags": [
+                    "bugs-controller"
+                ],
+                "summary": "bug3353",
+                "operationId": "bug3353UsingPOST",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "agentCode",
+                                    "orderNo",
+                                    "sign",
+                                    "timestamp"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "agentCode": {
+                                        "type": "string"
+                                    },
+                                    "orderNo": {
+                                        "type": "string"
+                                    },
+                                    "sign": {
+                                        "type": "string"
+                                    },
+                                    "timestamp": {
+                                        "type": "number",
+                                        "format": "bigdecimal"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WithdrawQueryRequestViewResponseView"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Bug1965": {
+                "title": "Bug1965",
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "Bug3087": {
+                "title": "Bug3087",
+                "required": [
+                    "password",
+                    "user"
+                ],
+                "type": "object",
+                "properties": {
+                    "password": {
+                        "type": "string"
+                    },
+                    "user": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Bug3311": {
+                "title": "Bug3311",
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Category": {
+                "title": "Category",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Dogs"
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "title": "ErrorResponse",
+                "required": [
+                    "invalidField"
+                ],
+                "type": "object",
+                "properties": {
+                    "invalidField": {
+                        "type": "string",
+                        "example": "address"
+                    }
+                }
+            },
+            "MyClass": {
+                "title": "MyClass",
+                "type": "object",
+                "properties": {
+                    "test": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Pet": {
+                "title": "Pet",
+                "required": [
+                    "name",
+                    "photoUrls"
+                ],
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "$ref": "#/components/schemas/Category"
+                    },
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 10
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "doggie"
+                    },
+                    "photoUrls": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "pet status in the store",
+                        "enum": [
+                            "available",
+                            "pending",
+                            "sold"
+                        ]
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Tag"
+                        }
+                    }
+                }
+            },
+            "Response": {
+                "title": "Response",
+                "required": [
+                    "data"
+                ],
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "string",
+                        "example": "some data"
+                    }
+                }
+            },
+            "Tag": {
+                "title": "Tag",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "WithdrawQueryRequestViewResponseView": {
+                "title": "WithdrawQueryRequestViewResponseView",
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "petstore_auth": {
+                "type": "oauth2",
+                "flows": {
+                    "implicit": {
+                        "authorizationUrl": "https://petstore3.swagger.io/oauth/authorize",
+                        "scopes": {
+                            "write:pets": "Write scope",
+                            "read:pets": "Read scope"
+                        }
+                    }
+                }
+            },
+            "api_key": {
+                "type": "apiKey",
+                "name": "api_key",
+                "in": "header"
+            },
+            "basicScheme": {
+                "type": "http",
+                "scheme": "basic"
+            }
+        }
+    }
+}

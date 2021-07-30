@@ -1,0 +1,40 @@
+configurations {
+  testArtifacts.extendsFrom testRuntime
+}
+
+task testJar(type: Jar) {
+  classifier "test"
+  from sourceSets.test.output
+  exclude '**/*log4j.xml*', '**/*simplelogger.properties*'
+}
+
+artifacts {
+  testArtifacts testJar
+}
+
+ext {
+  limits = [
+      'instruction': 100,
+      'branch'     : 100,
+      'line'       : 100,
+      'complexity' : 100,
+      'method'     : 100,
+      'class'      : 100
+  ]
+}
+
+dependencies {
+  api libs.core
+  api libs.spring
+  api project(':springfox-spring-web')
+
+  compileOnly "javax.validation:validation-api:$validationApiVersion"
+  compileOnly libs.springProvided
+  compileOnly libs.clientProvided
+  compileOnly libs.springBootProvided
+
+  testImplementation libs.test
+  testImplementation "javax.validation:validation-api:$validationApiVersion"
+  testImplementation libs.springProvided
+  testImplementation libs.clientProvided
+}

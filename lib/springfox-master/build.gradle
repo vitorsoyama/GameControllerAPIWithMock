@@ -1,0 +1,111 @@
+plugins {
+  id 'com.github.ben-manes.versions' version '0.29.0'
+  id 'se.patrikerdes.use-latest-versions' version '0.2.14'
+  id "com.jfrog.bintray" version "1.8.5"
+  id "com.jfrog.artifactory" version "4.16.1"
+  id "com.github.kt3k.coveralls" version "2.10.1"
+  id "org.asciidoctor.jvm.convert" version "2.4.0"
+  id "org.ajoberstar.grgit" version "4.0.2"
+  id "org.ajoberstar.git-publish" version "3.0.0-rc.1"
+  id "org.sonarqube" version "3.0"
+}
+
+sonarqube {
+  properties {
+    property "sonar.projectKey", "springfox_springfox"
+    property "sonar.organization", "springfox"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
+}
+
+apply from: "$rootDir/gradle/dependencies.gradle"
+apply from: "$rootDir/gradle/ide.gradle"
+apply plugin: 'springfox-multi-release'
+
+allprojects {
+  apply plugin: 'jacoco'
+
+  repositories {
+    jcenter()
+  }
+  ext['groovy.version'] = "$groovy"
+}
+
+subprojects {
+
+  //Not strictly groovy projects but useful for the IDE to recognise groovy test sources
+  apply plugin: 'java-library' //gradle groovy plugin extends the java plugin
+  apply plugin: 'groovy' //gradle groovy plugin extends the java plugin
+  apply plugin: 'idea'
+  apply plugin: 'checkstyle'
+
+  javadoc {
+    options.encoding = 'UTF-8'
+  }
+
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.deprecation = true
+    options.compilerArgs += ["-Xlint:unchecked", "-Xlint:deprecation", "-parameters"]
+  }
+
+  if (springfox.gradlebuild.utils.ProjectDefinitions.publishable(it)) {
+    apply from: "$rootDir/gradle/publishing.gradle"
+  }
+
+  checkstyle {
+    configFile = file("$rootDir/config/checkstyle.xml")
+  }
+
+  checkstyleMain.source = "src/main/java"
+
+
+  group = 'io.springfox'
+  version = project.rootProject.version
+
+  task allDeps(type: DependencyReportTask) {}
+
+  jacoco {
+    toolVersion = "$jacocoVersion"
+  }
+
+  jacocoTestReport {
+    reports {
+      xml.enabled true
+      html.enabled true
+    }
+  }
+
+  test {
+    jvmArgs "-Dorg.spockframework.mock.ignoreByteBuddy=true"
+    finalizedBy jacocoTestReport
+    useJUnitPlatform()
+  }
+
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+apply from: "$rootDir/gradle/documentation.gradle"
+
+task codeCoverageReport(type: JacocoReport) {
+
+  // Gather execution data from all subprojects
+  // (change this if you e.g. want to calculate unit test/integration test coverage separately)
+  executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+  // Add all relevant sourcesets from the subprojects
+  subprojects.each { sourceSets it.sourceSets.main }
+
+  reports {
+    xml.enabled true
+    xml.destination file("${buildDir}/reports/jacoco/report.xml")
+    html.enabled false
+    csv.enabled false
+  }
+}
+
+// always run the tests before generating the report
+codeCoverageReport.dependsOn {
+  subprojects*.test
+}

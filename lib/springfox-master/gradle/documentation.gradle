@@ -1,0 +1,104 @@
+import springfox.gradlebuild.BuildInfo
+import springfox.gradlebuild.utils.ProjectDefinitions
+
+apply plugin: 'org.ajoberstar.git-publish'
+
+gitPublish {
+  // where to publish to (repo must exist)
+  repoUri = 'https://github.com/springfox/springfox.git'
+
+  // branch will be created if it doesn't exist
+  branch = 'gh-pages'
+  
+  preserve {
+    include '**/*'
+  }
+  
+  contents {
+    from "${buildDir}/all-docs"
+  }
+
+  commitMessage = 'Publishing a documentation updates'
+}
+
+asciidoctor {
+  asciidoctorj {
+    version = '2.1.0'
+  }
+  baseDir = file('docs/asciidoc')
+  sourceDir = file('docs/asciidoc')
+  logDocuments = true
+  outputOptions {
+    separateOutputDirs = false
+    backends = ['html5']
+  }
+  outputDir = file("${buildDir}/all-docs/docs/snapshot")
+  attributes 'source-highlighter': 'coderay',
+          'springfox-current-version': project.version.toString(),
+          'springfox-released-version': project.rootProject.buildInfo.currentVersion.asText(),
+          'springfox-swagger-ui-rfc6570-version': "${rootProject.ext.springfoxRfc6570Version}",
+          toc: 'left',
+          idprefix: '',
+          sectanchors: '',
+          idseparator: '-',
+          icons: 'font',
+          encoding: 'utf-8'
+}
+
+task allJavadoc(type: Javadoc) {
+  final def publishables = ProjectDefinitions.publishables(project)
+  source publishables.collect { it.sourceSets.main.allJava }
+  classpath = files(publishables.collect { it.sourceSets.main.compileClasspath })
+  destinationDir = file("${buildDir}/all-docs/javadoc/snapshot")
+}
+
+
+task allDocs {
+  dependsOn asciidoctor, allJavadoc
+  doLast {
+    logger.lifecycle "[RELEASE] Asciidoctor attributes: ${asciidoctor.attributes}"
+    logger.lifecycle "[RELEASE] Asciidoctor properties: ${asciidoctor.properties}"
+  }
+}
+
+task publishDocs {
+  dependsOn gitPublishPush
+}
+
+task createReleaseDocs(type: Exec, dependsOn: allDocs) {
+  description = "Creates released version of documentation"
+  group = "release"
+
+  BuildInfo buildInfo = project.rootProject.buildInfo
+  String symlink = 'current'
+  String docVersion = buildInfo.currentVersion.asText()
+
+  String releaseCommands = ""
+  ["${buildDir}/all-docs/docs/snapshot"    : "${buildDir}/all-docs/docs",
+   "${buildDir}/all-docs/javadoc/snapshot": "${buildDir}/all-docs/javadoc"].each { source, destination ->
+    String releaseVersionDir = "${destination}/${docVersion}/"
+    releaseCommands += """
+      cp -r $source $releaseVersionDir
+      ln -sf $releaseVersionDir ${destination}/${symlink}
+"""
+  }
+
+  def commands = """
+  $releaseCommands
+  """
+  
+  if (buildInfo.dryRun) {
+    logger.warn("Will run the following commands:")
+    logger.warn(commands)
+    commandLine "sh", "-c", "echo This is a dry run"
+    return
+  }
+
+  commandLine "sh", "-c", commands
+}
+
+task releaseDocs {
+  dependsOn createReleaseDocs, publishDocs
+}
+
+gitPublishPush.dependsOn allDocs
