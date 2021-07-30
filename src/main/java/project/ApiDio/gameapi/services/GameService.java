@@ -9,6 +9,7 @@ import project.ApiDio.gameapi.entities.Game;
 import project.ApiDio.gameapi.exception.GameAlreadyRegisteredException;
 import project.ApiDio.gameapi.exception.GameNotFoundException;
 import project.ApiDio.gameapi.exception.GameStockExceededException;
+import project.ApiDio.gameapi.exception.GameStockLessThanRequiredException;
 import project.ApiDio.gameapi.repositories.GameRepository;
 
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor(onConstructor = @__(@Autowired))
 public class GameService {
 
-    private final GameRepository gameRepository;
+    private GameRepository gameRepository;
 
     private final GameMapper gameMapper = GameMapper.INSTANCE;
 
@@ -67,13 +68,23 @@ public class GameService {
 
 
     public GameDTO increment(Long id, int quantityToIncrement) throws GameNotFoundException, GameStockExceededException {
-        Game beerToIncrementStock = verifyIfExists(id);
-        int quantityAfterIncrement = quantityToIncrement + beerToIncrementStock.getQuantity();
-        if (quantityAfterIncrement <= beerToIncrementStock.getMax()) {
-            beerToIncrementStock.setQuantity(beerToIncrementStock.getQuantity() + quantityToIncrement);
-            Game incrementedGameStock = gameRepository.save(beerToIncrementStock);
+        Game gameToIncrementStock = verifyIfExists(id);
+        int quantityAfterIncrement = quantityToIncrement + gameToIncrementStock.getQuantity();
+        if (quantityAfterIncrement <= gameToIncrementStock.getMax()) {
+            gameToIncrementStock.setQuantity(gameToIncrementStock.getQuantity() + quantityToIncrement);
+            Game incrementedGameStock = gameRepository.save(gameToIncrementStock);
             return gameMapper.toDTO(incrementedGameStock);
         }
         throw new GameStockExceededException(id, quantityToIncrement);
+    }
+    public GameDTO decrement(Long id, int quantityToDecrement) throws GameNotFoundException, GameStockExceededException, GameStockLessThanRequiredException {
+        Game gameToDecrementStock = verifyIfExists(id);
+        int quantityAfterDecrement = quantityToDecrement - gameToDecrementStock.getQuantity();
+        if (quantityAfterDecrement <= gameToDecrementStock.getMax()) {
+            gameToDecrementStock.setQuantity(gameToDecrementStock.getQuantity() - quantityAfterDecrement);
+            Game incrementedGameStock = gameRepository.save(gameToDecrementStock);
+            return gameMapper.toDTO(incrementedGameStock);
+        }
+        throw new GameStockLessThanRequiredException(id, quantityToDecrement);
     }
 }

@@ -1,5 +1,6 @@
 package project.ApiDio.gameapi.gameLibrary.controller;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,7 @@ import project.ApiDio.gameapi.controllers.GameController;
 import project.ApiDio.gameapi.dto.request.GameDTO;
 import project.ApiDio.gameapi.dto.request.QuantityDTO;
 import project.ApiDio.gameapi.exception.GameNotFoundException;
+import project.ApiDio.gameapi.exception.GameStockExceededException;
 import project.ApiDio.gameapi.gameLibrary.builder.GameDTOBuilder;
 import project.ApiDio.gameapi.services.GameService;
 
@@ -23,6 +25,7 @@ import java.util.Collections;
 
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -181,7 +184,7 @@ public class GameControllerTest {
 
         when(gameService.increment(VALID_GAME_ID, quantityDTO.getQuantity())).thenReturn(gameDTO);
 
-        mockMvc.perform(MockMvcRequestBuilders.patch(GAME_API_URL_PATH + "/" + VALID_GAME_ID + GAME_API_SUBPATH_INCREMENT_URL)
+        mockMvc.perform(patch(GAME_API_URL_PATH + "/" + VALID_GAME_ID + GAME_API_SUBPATH_INCREMENT_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(quantityDTO))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.gameName", is(gameDTO.getGameName())))
@@ -190,5 +193,86 @@ public class GameControllerTest {
                 .andExpect(jsonPath("$.quantity", is(gameDTO.getQuantity())));
     }
 
-
-}
+//      @Test
+//    void whenPATCHIsCalledToIncrementGreatherThanMaxThenBadRequestStatusIsReturned() throws Exception {
+//        QuantityDTO quantityDTO = QuantityDTO.builder()
+//               .quantity(30)
+//                .build();
+//
+//        GameDTO gameDTO = GameDTOBuilder.builder().build().toGameDTO();
+//        gameDTO.setQuantity(gameDTO.getQuantity() + quantityDTO.getQuantity());
+//
+//        when(GameService.increment(VALID_GAME_ID, quantityDTO.getQuantity())).thenThrow(GameStockExceededException.class);
+//
+//        mockMvc.perform(patch(GAME_API_URL_PATH + "/" + VALID_GAME_ID + GAME_API_SUBPATH_INCREMENT_URL)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(asJsonString(quantityDTO))).andExpect(status().isBadRequest());
+//    }
+//
+//    @Test
+//    void whenPATCHIsCalledWithInvalidGameIdToIncrementThenNotFoundStatusIsReturned() throws Exception {
+//        QuantityDTO quantityDTO = QuantityDTO.builder()
+//                .quantity(30)
+//                .build();
+//
+//        when(gameService.increment(INVALID_GAME_ID, quantityDTO.getQuantity())).thenThrow(GameNotFoundException.class);
+//        mockMvc.perform(patch(GAME_API_URL_PATH + "/" + INVALID_GAME_ID + GAME_API_SUBPATH_INCREMENT_URL)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(asJsonString(quantityDTO)))
+//                .andExpect(status().isNotFound());
+//    }
+//
+//    @SneakyThrows
+//    @Test
+//    void whenPATCHIsCalledToDecrementDiscountThenOKstatusIsReturned() throws Exception {
+//        QuantityDTO quantityDTO = QuantityDTO.builder()
+//                .quantity(5)
+//                .build();
+//
+//        GameDTO gameDTO = GameDTOBuilder.builder().build().toGameDTO();
+//        gameDTO.setQuantity(gameDTO.getQuantity() + quantityDTO.getQuantity());
+//
+//        when(gameService.decrement(VALID_GAME_ID, quantityDTO.getQuantity())).thenReturn(gameDTO);
+//
+//        mockMvc.perform(patch(GAME_API_URL_PATH + "/" + VALID_GAME_ID + GAME_API_SUBPATH_DECREMENT_URL)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(asJsonString(quantityDTO))).andExpect(status().isOk())
+//                .andExpect(jsonPath("$.gameName", is(gameDTO.getGameName())))
+//                .andExpect(jsonPath("$.producer", is(gameDTO.getGameProducer())))
+//                .andExpect(jsonPath("$.console", is(gameDTO.getGameConsole())))
+//                .andExpect(jsonPath("$.quantity", is(gameDTO.getQuantity())));
+//    }
+//
+//    @SneakyThrows
+//    @Test
+//    void whenPATCHIsCalledToDEcrementLowerThanZeroThenBadRequestStatusIsReturned() throws Exception {
+//        QuantityDTO quantityDTO = QuantityDTO.builder()
+//                .quantity(60)
+//                .build();
+//
+//        GameDTO gameDTO = GameDTOBuilder.builder().build().toGameDTO();
+//        gameDTO.setQuantity(gameDTO.getQuantity() + quantityDTO.getQuantity());
+//
+//        when(gameService.decrement(VALID_GAME_ID, quantityDTO.getQuantity())).thenThrow(GameStockExceededException.class);
+//
+//        mockMvc.perform(patch(GAME_API_URL_PATH + "/" + VALID_GAME_ID + GAME_API_SUBPATH_DECREMENT_URL)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(asJsonString(quantityDTO))).andExpect(status().isBadRequest());
+//    }
+//
+//    @SneakyThrows
+//    @Test
+//    void whenPATCHIsCalledWithInvalidGameIdToDecrementThenNotFoundStatusIsReturned() throws Exception {
+//        QuantityDTO quantityDTO = QuantityDTO.builder()
+//                .quantity(5)
+//                .build();
+//
+//        when(gameService.decrement(INVALID_GAME_ID, quantityDTO.getQuantity())).thenThrow(GameNotFoundException.class);
+//        mockMvc.perform(patch(GAME_API_URL_PATH + "/" + INVALID_GAME_ID + GAME_API_SUBPATH_DECREMENT_URL)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(asJsonString(quantityDTO)))
+//                .andExpect(status().isNotFound());
+//    }
+//}
+//
+//}
